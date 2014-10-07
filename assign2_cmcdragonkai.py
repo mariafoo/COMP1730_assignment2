@@ -1,5 +1,3 @@
-## u5021276
-
 ## Implementing this function is task 1:
 def read_graph_from_file(filename):
     '''This function reads a graph from a file and returns a tuple of
@@ -110,15 +108,27 @@ def read_graph_from_file(filename):
 
     return (neighbour_list, positions_list)
 
-## Implementing this function is task 2:
 def label_graph_components(neighbour_list):
     '''This function takes as input the neighbour list representation of
     a graph and returns a list with the component number for each node in
     the graph. Components must be numbered consecutively, starting from
     zero.'''
 
-    # Depth First Search (adapted from Mann, E 2014, 'Depth-First Search and Breadth-First Search in Python', Eddmann blog, web log post, 5 March, viewed 6 October 2014, http://eddmann.com/posts/depth-first-search-and-breadth-first-search-in-python/)
-    def depth_first_search(neigbour_list, root_node):
+    # Mapping Operation
+    # [ NL          [ LL
+    #   [n]   --->     0
+    #   [n]   --->     0
+    #   [m]   --->     1
+    # ]       DFS   ]
+    # 
+    # With external context: subgraph dictionary
+    # 
+    # { subgraph dictionary
+    #   label -> [neighbours]
+    #   label -> [neighbours]
+    # }
+
+    def depth_first_search(neighbour_list, root_node):
         visited_nodes = set()
         stack = [root_node]
         while stack:
@@ -128,28 +138,28 @@ def label_graph_components(neighbour_list):
                 stack.extend(set(neighbour_list[node]) - visited_nodes)
         return list(visited_nodes)
 
-    component_counter = 0
-    node_list = [index for index, neighbour in enumerate(neighbour_list)] 
-    label_list = [None for node in node_list]
-    # replace None with subgraph label (subgraph label is from 0 to C-1, where C is the number of components)
-    while None in label_list:
-        node = label_list.index(None)
-        visited_list = depth_first_search(neighbour_list, node)
-        for value in visited_list:
-            label_list[value] = component_counter
-        component_counter = component_counter + 1
+    subgraph_dictionary = {}
+    label_counter = 0
+    label_list = []
+
+    def subgraph_search(subgraph_dictionary, node):
+        for label in subgraph_dictionary:
+            if node in set(subgraph_dictionary[label]):
+                return label
+        return False
+
+    for node, neighbours in enumerate(neighbour_list):
+        existing_label = subgraph_search(subgraph_dictionary, node)
+        if type(existing_label) == int:
+            label_list.append(existing_label)
+        else:
+            subgraph_dictionary[label_counter] = depth_first_search(neighbour_list, node)
+            label_list.append(label_counter)
+            label_counter = label_counter + 1
+
     return label_list
 
-## Implementing this function is task 3:
 def get_component_density(label, neighbour_list, label_list):
-    '''This function takes a component label, the neighbour list
-    representation of a graph and a list of component labels
-    (one for each node in the graph), and should calculate and return
-    the link density in the component with the given label. The link
-    density is defined as the number of links (in that component)
-    divided by the number of nodes (in that component). If there
-    are no nodes with the given component label, the function
-    should raise an error.'''
 
     def depth_first_search(neighbour_list, root_node):
         visited_nodes = set()
@@ -164,13 +174,13 @@ def get_component_density(label, neighbour_list, label_list):
                 stack.extend(resultant_neighbours)
         return path_count
 
-    root_node = label_list.index(label)
+    root_node = label_list.index(label)    
     paths = depth_first_search(neighbour_list, root_node)
     nodes = label_list.count(label)
 
     return paths/nodes
 
-    # we can also get the full number of paths in the supergraph by collpasing the duplicates in the label_list and then iterating this function on the collapsed label_list
+    # we can also get the full number of paths in the supergraph by collapsing the duplicates in the label_list and then iterating this function on the collapsed label_list!
 
 ## The code below defines a custom exception type for format errors in
 ## the graph file. Catching format errors in the input file is one
